@@ -197,7 +197,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     setStreamLoading(true);
-    fetch("/api/stream")
+    fetch(`/api/stream?days=${days}`)
       .then((r) => r.json())
       .then((d) => {
         if (d.error) throw new Error(d.error);
@@ -205,7 +205,7 @@ export default function Dashboard() {
       })
       .catch(() => {})
       .finally(() => setStreamLoading(false));
-  }, []);
+  }, [days]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">

@@ -8,7 +8,12 @@ function getClient() {
   );
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const rawDays = searchParams.get("days");
+  const days = ["7", "28", "90"].includes(rawDays ?? "") ? parseInt(rawDays!) : 28;
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
   try {
     const client = getClient();
 
@@ -41,7 +46,9 @@ export async function GET() {
         channel.id ||
         "Unknown";
 
-      const messages = channel.state.messages.slice(-5);
+      const messages = channel.state.messages.filter(
+        (m) => m.created_at && new Date(String(m.created_at)) >= new Date(since),
+      );
       for (const msg of messages) {
         if (!msg.text || msg.type === "system" || msg.user?.id === "admin") continue;
 
@@ -98,14 +105,21 @@ export async function GET() {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
-    // New users: query users sorted by created_at desc
+    // New users: query users created within the selected window
     const usersRes = await client.queryUsers(
-      { role: "user" },
+      { role: "user", created_at: { $gte: since } },
       { created_at: -1 },
       { limit: 10 },
     );
 
-    const totalUsers = (usersRes as unknown as { total_count?: number }).total_count ?? usersRes.users.length;
+    // Total users (all time — not windowed)
+    const totalUsersRes = await client.queryUsers(
+      { role: "user" },
+      {},
+      { limit: 1 },
+    );
+
+    const totalUsers = (totalUsersRes as unknown as { total_count?: number }).total_count ?? totalUsersRes.users.length;
 
     const newUsers = usersRes.users.map((u) => ({
       id: u.id,
