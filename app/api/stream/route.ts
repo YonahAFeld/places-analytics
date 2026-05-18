@@ -105,6 +105,8 @@ export async function GET() {
       { limit: 10 },
     );
 
+    const totalUsers = (usersRes as unknown as { total_count?: number }).total_count ?? usersRes.users.length;
+
     const newUsers = usersRes.users.map((u) => ({
       id: u.id,
       name: u.name || u.id,
@@ -112,7 +114,7 @@ export async function GET() {
       online: u.online ?? false,
     }));
 
-    return NextResponse.json({ powerUsers, newUsers, recentMessages: topRecentMessages, largestChannels, mostActiveChannels });
+    return NextResponse.json({ powerUsers, newUsers, recentMessages: topRecentMessages, largestChannels, mostActiveChannels, totalUsers });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error("Stream API error:", msg);
