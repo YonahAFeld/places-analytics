@@ -55,10 +55,13 @@ type RecentMessage = {
   sentAt: string;
 };
 
+type ChannelRank = { id: string; name: string; memberCount: number; lastMessageAt: string | null };
 type StreamData = {
   powerUsers: PowerUser[];
   newUsers: NewUser[];
   recentMessages: RecentMessage[];
+  largestChannels: ChannelRank[];
+  mostActiveChannels: ChannelRank[];
 };
 
 const DAYS_OPTIONS = [
@@ -411,6 +414,58 @@ export default function Dashboard() {
                           <p className="text-xs text-gray-400">Joined {timeAgo(u.createdAt)}</p>
                         </div>
                         {u.online && <span className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-sm">No data.</p>
+                )}
+              </SectionCard>
+            </div>
+
+            {/* Channel Rankings */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <SectionCard title="👥 Largest Channels">
+                {streamLoading ? (
+                  <p className="text-gray-400 text-sm">Loading...</p>
+                ) : streamData?.largestChannels.length ? (
+                  <div className="flex flex-col gap-3">
+                    {streamData.largestChannels.map((c, i) => {
+                      const max = streamData.largestChannels[0].memberCount || 1;
+                      const barPct = Math.round((c.memberCount / max) * 100);
+                      return (
+                        <div key={c.id} className="flex items-center gap-3">
+                          <span className="text-sm font-bold text-gray-400 w-5 text-right flex-shrink-0">{i + 1}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium text-gray-800 truncate">{c.name}</span>
+                              <span className="text-sm font-semibold text-indigo-600 flex-shrink-0 ml-2">{c.memberCount} members</span>
+                            </div>
+                            <div className="w-full bg-gray-100 rounded-full h-1.5">
+                              <div className="bg-indigo-400 h-1.5 rounded-full" style={{ width: `${barPct}%` }} />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-sm">No data.</p>
+                )}
+              </SectionCard>
+
+              <SectionCard title="🔥 Most Recently Active Channels">
+                {streamLoading ? (
+                  <p className="text-gray-400 text-sm">Loading...</p>
+                ) : streamData?.mostActiveChannels.length ? (
+                  <div className="flex flex-col gap-3">
+                    {streamData.mostActiveChannels.map((c, i) => (
+                      <div key={c.id} className="flex items-center gap-3">
+                        <span className="text-sm font-bold text-gray-400 w-5 text-right flex-shrink-0">{i + 1}</span>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-medium text-gray-800 truncate block">{c.name}</span>
+                          <span className="text-xs text-gray-400">{c.memberCount} members · last active {c.lastMessageAt ? timeAgo(c.lastMessageAt) : "unknown"}</span>
+                        </div>
                       </div>
                     ))}
                   </div>

@@ -71,6 +71,27 @@ export async function GET() {
     );
     const topRecentMessages = recentMessages.slice(0, 20);
 
+    // Channel rankings
+    const channelRankings = channelsRes
+      .map((channel) => {
+        const channelData = channel.data as Record<string, unknown> | undefined;
+        return {
+          id: channel.id ?? "",
+          name: (channelData?.name as string) || (channelData?.interest as string) || channel.id || "Unknown",
+          memberCount: (channelData?.member_count as number) ?? 0,
+          lastMessageAt: channelData?.last_message_at ? String(channelData.last_message_at) : null,
+        };
+      });
+
+    const largestChannels = [...channelRankings]
+      .sort((a, b) => b.memberCount - a.memberCount)
+      .slice(0, 10);
+
+    const mostActiveChannels = [...channelRankings]
+      .filter((c) => c.lastMessageAt)
+      .sort((a, b) => new Date(b.lastMessageAt!).getTime() - new Date(a.lastMessageAt!).getTime())
+      .slice(0, 10);
+
     // Power users: sort by message count desc
     const powerUsers = Object.entries(userMessageCount)
       .map(([id, { name, count }]) => ({ id, name, count }))
@@ -91,7 +112,7 @@ export async function GET() {
       online: u.online ?? false,
     }));
 
-    return NextResponse.json({ powerUsers, newUsers, recentMessages: topRecentMessages });
+    return NextResponse.json({ powerUsers, newUsers, recentMessages: topRecentMessages, largestChannels, mostActiveChannels });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error("Stream API error:", msg);
