@@ -1,16 +1,22 @@
 import { initializeApp, getApps, cert } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
+import { getAuth } from "firebase-admin/auth";
 
-function getAdminDb() {
+function getAdminApp() {
   if (!getApps().length) {
     const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY!);
     initializeApp({ credential: cert(credentials) });
   }
-  return getFirestore();
+  return getAuth();
 }
 
 export async function getTotalUserCount(): Promise<number> {
-  const db = getAdminDb();
-  const snapshot = await db.collection("users").count().get();
-  return snapshot.data().count;
+  const auth = getAdminApp();
+  let total = 0;
+  let pageToken: string | undefined;
+  do {
+    const result = await auth.listUsers(1000, pageToken);
+    total += result.users.length;
+    pageToken = result.pageToken;
+  } while (pageToken);
+  return total;
 }
