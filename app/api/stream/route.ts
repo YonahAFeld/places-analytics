@@ -93,9 +93,10 @@ export async function GET() {
 
     return NextResponse.json({ powerUsers, newUsers, recentMessages: topRecentMessages });
   } catch (error) {
-    console.error("Stream API error:", error);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("Stream API error:", msg);
     return NextResponse.json(
-      { error: "Failed to fetch Stream data" },
+      { error: "Failed to fetch Stream data", detail: msg },
       { status: 500 },
     );
   }
