@@ -1,6 +1,5 @@
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { NextResponse } from "next/server";
-import { getTotalUserCount } from "../../../lib/firebaseAdmin";
 
 const propertyId = process.env.GA4_PROPERTY_ID!;
 
@@ -217,8 +216,6 @@ export async function GET(request: Request) {
       joinConversionRate: joinButtonCount > 0 ? Math.round((joinChannelCount / joinButtonCount) * 100) : 0,
     };
 
-    const allTimeUsers = await getTotalUserCount();
-
     return NextResponse.json({
       kpis,
       dauTrend,
@@ -227,7 +224,6 @@ export async function GET(request: Request) {
       onboardingFunnel,
       signupFunnel,
       derivedKpis,
-      allTimeUsers,
     });
   } catch (error) {
     console.error("GA4 API error:", error);

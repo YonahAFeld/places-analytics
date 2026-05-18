@@ -42,7 +42,6 @@ type AnalyticsData = {
   onboardingFunnel: OnboardingFunnel;
   signupFunnel: SignupFunnelStep[];
   derivedKpis: DerivedKpis;
-  allTimeUsers: number;
 };
 
 type PowerUser = { id: string; name: string; count: number };
@@ -239,17 +238,6 @@ export default function Dashboard() {
           <div className="flex items-center justify-center h-64 text-gray-400 text-lg">Loading...</div>
         ) : data ? (
           <div className="flex flex-col gap-6">
-            {/* Total Users Hero */}
-            <div className="bg-gradient-to-r from-amber-400 to-yellow-300 rounded-2xl p-6 shadow-sm flex items-center justify-between">
-              <div>
-                <p className="text-amber-900 font-semibold text-sm">Total App Users</p>
-                <p className="text-5xl font-extrabold text-amber-900 mt-1">
-                  {data ? data.allTimeUsers.toLocaleString() : "—"}
-                </p>
-              </div>
-              <div className="text-6xl opacity-30">👥</div>
-            </div>
-
             {/* Core KPI Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <KpiCard label="Active Users" value={Number(data.kpis.activeUsers).toLocaleString()} />
