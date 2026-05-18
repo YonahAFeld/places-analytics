@@ -2,7 +2,7 @@ import { StreamChat } from "stream-chat";
 import { NextResponse } from "next/server";
 
 function getClient() {
-  return StreamChat.getInstance(
+  return new StreamChat(
     process.env.STREAM_API_KEY!,
     process.env.STREAM_API_SECRET!,
   );
