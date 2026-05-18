@@ -113,7 +113,10 @@ export async function GET(request: Request) {
       { limit: 10 },
     );
 
-    const totalUsers = await getTotalUserCount();
+    const totalUsers = await getTotalUserCount().catch((e) => {
+      console.error("Failed to get total user count:", e.message);
+      return null;
+    });
 
     const newUsers = usersRes.users.map((u) => ({
       id: u.id,

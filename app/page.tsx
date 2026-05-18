@@ -62,7 +62,7 @@ type StreamData = {
   recentMessages: RecentMessage[];
   largestChannels: ChannelRank[];
   mostActiveChannels: ChannelRank[];
-  totalUsers: number;
+  totalUsers: number | null;
 };
 
 const DAYS_OPTIONS = [
@@ -244,7 +244,7 @@ export default function Dashboard() {
               <div>
                 <p className="text-amber-900 font-semibold text-sm">Total App Users</p>
                 <p className="text-5xl font-extrabold text-amber-900 mt-1">
-                  {streamData ? streamData.totalUsers.toLocaleString() : "—"}
+                  {streamData?.totalUsers != null ? streamData.totalUsers.toLocaleString() : "—"}
                 </p>
               </div>
               <div className="text-6xl opacity-30">👥</div>
