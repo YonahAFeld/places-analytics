@@ -34,9 +34,10 @@ export async function GET() {
       {};
 
     for (const channel of channelsRes) {
+      const channelData = channel.data as Record<string, unknown> | undefined;
       const channelName =
-        (channel.data?.name as string) ||
-        (channel.data?.interest as string) ||
+        (channelData?.name as string) ||
+        (channelData?.interest as string) ||
         channel.id ||
         "Unknown";
 
@@ -54,7 +55,7 @@ export async function GET() {
           userName,
           channelName,
           channelId: channel.id ?? "",
-          sentAt: msg.created_at as string,
+          sentAt: String(msg.created_at),
         });
 
         if (!userMessageCount[userId]) {
@@ -86,7 +87,7 @@ export async function GET() {
     const newUsers = usersRes.users.map((u) => ({
       id: u.id,
       name: u.name || u.id,
-      createdAt: u.created_at as string,
+      createdAt: String(u.created_at),
       online: u.online ?? false,
     }));
 
