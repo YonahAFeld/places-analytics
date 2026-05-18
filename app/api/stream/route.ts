@@ -1,6 +1,5 @@
 import { StreamChat } from "stream-chat";
 import { NextResponse } from "next/server";
-import { getTotalUserCount } from "../../../lib/firebaseAdmin";
 
 function getClient() {
   return new StreamChat(
@@ -113,11 +112,6 @@ export async function GET(request: Request) {
       { limit: 10 },
     );
 
-    const totalUsers = await getTotalUserCount().catch((e) => {
-      console.error("Failed to get total user count:", e.message);
-      return null;
-    });
-
     const newUsers = usersRes.users.map((u) => ({
       id: u.id,
       name: u.name || u.id,
@@ -125,7 +119,7 @@ export async function GET(request: Request) {
       online: u.online ?? false,
     }));
 
-    return NextResponse.json({ powerUsers, newUsers, recentMessages: topRecentMessages, largestChannels, mostActiveChannels, totalUsers });
+    return NextResponse.json({ powerUsers, newUsers, recentMessages: topRecentMessages, largestChannels, mostActiveChannels });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error("Stream API error:", msg);

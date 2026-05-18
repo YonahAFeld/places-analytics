@@ -49,6 +49,7 @@ export async function GET(request: Request) {
       signUpMethodResponse,
       onboardingFunnelResponse,
       signupFunnelResponse,
+      allTimeUsersResponse,
     ] = await Promise.all([
       // KPIs: active users, new users, sessions
       client.runReport({
@@ -136,6 +137,13 @@ export async function GET(request: Request) {
           },
         },
       }),
+
+      // All-time total users
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges: [{ startDate: "2020-01-01", endDate: "today" }],
+        metrics: [{ name: "totalUsers" }],
+      }),
     ]);
 
     const kpiRow = kpiResponse[0].rows?.[0];
@@ -215,6 +223,8 @@ export async function GET(request: Request) {
       joinConversionRate: joinButtonCount > 0 ? Math.round((joinChannelCount / joinButtonCount) * 100) : 0,
     };
 
+    const allTimeUsers = parseInt(allTimeUsersResponse[0].rows?.[0]?.metricValues?.[0]?.value ?? "0");
+
     return NextResponse.json({
       kpis,
       dauTrend,
@@ -223,6 +233,7 @@ export async function GET(request: Request) {
       onboardingFunnel,
       signupFunnel,
       derivedKpis,
+      allTimeUsers,
     });
   } catch (error) {
     console.error("GA4 API error:", error);
