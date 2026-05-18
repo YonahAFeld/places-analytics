@@ -33,12 +33,14 @@ type DerivedKpis = {
   avgChannelsJoinedPerUser: string;
   joinConversionRate: number;
 };
+type SignupFunnelStep = { event: string; label: string; users: number; dropPct: number };
 type AnalyticsData = {
   kpis: KPIs;
   dauTrend: DauPoint[];
   eventCounts: EventCount[];
   signUpMethods: SignUpMethod[];
   onboardingFunnel: OnboardingFunnel;
+  signupFunnel: SignupFunnelStep[];
   derivedKpis: DerivedKpis;
 };
 
@@ -331,6 +333,49 @@ export default function Dashboard() {
                 )}
               </SectionCard>
             </div>
+
+            {/* Signup Funnel Leakage */}
+            <SectionCard title="🔍 Signup Funnel Leakage">
+              {data.signupFunnel.every((s) => s.users === 0) ? (
+                <p className="text-gray-400 text-sm">No data in this period.</p>
+              ) : (
+                <div className="flex flex-col gap-0">
+                  {data.signupFunnel.map((step, i) => {
+                    const max = data.signupFunnel[0].users || 1;
+                    const barPct = Math.round((step.users / max) * 100);
+                    const isBigDrop = step.dropPct >= 30;
+                    return (
+                      <div key={step.event}>
+                        {i > 0 && (
+                          <div className="flex items-center gap-3 py-1 pl-4">
+                            <div className={`text-xs font-medium ${isBigDrop ? "text-red-500" : "text-gray-400"}`}>
+                              {isBigDrop ? "⚠️" : "↓"} {step.dropPct}% drop-off
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-4">
+                          <div className="w-40 flex-shrink-0 text-sm text-gray-600 font-medium text-right pr-2">{step.label}</div>
+                          <div className="flex-1 flex items-center gap-3">
+                            <div className="flex-1 bg-gray-100 rounded-full h-7 overflow-hidden">
+                              <div
+                                className={`h-full rounded-full flex items-center justify-end pr-2 transition-all ${isBigDrop && i > 0 ? "bg-red-400" : "bg-indigo-500"}`}
+                                style={{ width: `${barPct}%` }}
+                              />
+                            </div>
+                            <span className="text-sm font-semibold text-gray-800 w-16 flex-shrink-0">
+                              {step.users.toLocaleString()}
+                            </span>
+                            <span className="text-xs text-gray-400 w-10 flex-shrink-0">
+                              {barPct}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </SectionCard>
 
             {/* Stream widgets */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

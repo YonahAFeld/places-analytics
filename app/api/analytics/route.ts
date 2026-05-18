@@ -48,6 +48,7 @@ export async function GET(request: Request) {
       topEventsResponse,
       signUpMethodResponse,
       onboardingFunnelResponse,
+      signupFunnelResponse,
     ] = await Promise.all([
       // KPIs: active users, new users, sessions
       client.runReport({
@@ -112,6 +113,29 @@ export async function GET(request: Request) {
           },
         },
       }),
+
+      // Full signup funnel: go_to_signup → sign_up → submit_details → submit_location → onboarding_submit_interests → onboarding_complete
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges: [{ startDate: `${days}daysAgo`, endDate: "today" }],
+        dimensions: [{ name: "eventName" }],
+        metrics: [{ name: "totalUsers" }],
+        dimensionFilter: {
+          filter: {
+            fieldName: "eventName",
+            inListFilter: {
+              values: [
+                "go_to_signup",
+                "sign_up",
+                "submit_details",
+                "submit_location",
+                "onboarding_submit_interests",
+                "onboarding_complete",
+              ],
+            },
+          },
+        },
+      }),
     ]);
 
     const kpiRow = kpiResponse[0].rows?.[0];
@@ -140,6 +164,27 @@ export async function GET(request: Request) {
         method: row.dimensionValues?.[1]?.value ?? "unknown",
         count: parseInt(row.metricValues?.[0]?.value ?? "0"),
       }));
+
+    // Signup funnel leakage
+    const FUNNEL_STEPS = [
+      { event: "go_to_signup", label: "Visited Sign Up" },
+      { event: "sign_up", label: "Signed Up" },
+      { event: "submit_details", label: "Submitted Details" },
+      { event: "submit_location", label: "Submitted Location" },
+      { event: "onboarding_submit_interests", label: "Submitted Interests" },
+      { event: "onboarding_complete", label: "Onboarding Complete" },
+    ];
+    const signupFunnelMap: Record<string, number> = {};
+    for (const row of signupFunnelResponse[0].rows ?? []) {
+      const event = row.dimensionValues?.[0]?.value ?? "";
+      signupFunnelMap[event] = parseInt(row.metricValues?.[0]?.value ?? "0");
+    }
+    const signupFunnel = FUNNEL_STEPS.map((step, i) => {
+      const users = signupFunnelMap[step.event] ?? 0;
+      const prevUsers = i === 0 ? users : (signupFunnelMap[FUNNEL_STEPS[i - 1].event] ?? 0);
+      const dropPct = prevUsers > 0 && i > 0 ? Math.round(((prevUsers - users) / prevUsers) * 100) : 0;
+      return { event: step.event, label: step.label, users, dropPct };
+    });
 
     // Onboarding funnel
     const funnelMap: Record<string, number> = {};
@@ -176,6 +221,7 @@ export async function GET(request: Request) {
       eventCounts,
       signUpMethods,
       onboardingFunnel,
+      signupFunnel,
       derivedKpis,
     });
   } catch (error) {
