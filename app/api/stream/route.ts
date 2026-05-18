@@ -1,5 +1,6 @@
 import { StreamChat } from "stream-chat";
 import { NextResponse } from "next/server";
+import { getTotalUserCount } from "../../../lib/firebaseAdmin";
 
 function getClient() {
   return new StreamChat(
@@ -112,14 +113,7 @@ export async function GET(request: Request) {
       { limit: 10 },
     );
 
-    // Total users (all time — not windowed)
-    const totalUsersRes = await client.queryUsers(
-      { role: "user" },
-      {},
-      { limit: 1 },
-    );
-
-    const totalUsers = (totalUsersRes as unknown as { total_count?: number }).total_count ?? totalUsersRes.users.length;
+    const totalUsers = await getTotalUserCount();
 
     const newUsers = usersRes.users.map((u) => ({
       id: u.id,
