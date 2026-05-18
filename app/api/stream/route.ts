@@ -1,0 +1,101 @@
+import { StreamChat } from "stream-chat";
+import { NextResponse } from "next/server";
+
+function getClient() {
+  return StreamChat.getInstance(
+    process.env.STREAM_API_KEY!,
+    process.env.STREAM_API_SECRET!,
+  );
+}
+
+export async function GET() {
+  try {
+    const client = getClient();
+
+    // Fetch recent messages across all team channels (last 30)
+    const channelsRes = await client.queryChannels(
+      { type: "team" },
+      { last_message_at: -1 },
+      { limit: 30, state: true },
+    );
+
+    // Build recent messages list from channel state
+    const recentMessages: {
+      id: string;
+      text: string;
+      userName: string;
+      channelName: string;
+      channelId: string;
+      sentAt: string;
+    }[] = [];
+
+    // Track message counts per user
+    const userMessageCount: Record<string, { name: string; count: number }> =
+      {};
+
+    for (const channel of channelsRes) {
+      const channelName =
+        (channel.data?.name as string) ||
+        (channel.data?.interest as string) ||
+        channel.id ||
+        "Unknown";
+
+      const messages = channel.state.messages.slice(-5);
+      for (const msg of messages) {
+        if (!msg.text || msg.type === "system" || msg.user?.id === "admin") continue;
+
+        const userId = msg.user?.id ?? "unknown";
+        const userName =
+          msg.user?.name || msg.user?.id || "Unknown";
+
+        recentMessages.push({
+          id: msg.id,
+          text: msg.text,
+          userName,
+          channelName,
+          channelId: channel.id ?? "",
+          sentAt: msg.created_at as string,
+        });
+
+        if (!userMessageCount[userId]) {
+          userMessageCount[userId] = { name: userName, count: 0 };
+        }
+        userMessageCount[userId].count += 1;
+      }
+    }
+
+    // Sort recent messages newest first, take top 20
+    recentMessages.sort(
+      (a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime(),
+    );
+    const topRecentMessages = recentMessages.slice(0, 20);
+
+    // Power users: sort by message count desc
+    const powerUsers = Object.entries(userMessageCount)
+      .map(([id, { name, count }]) => ({ id, name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    // New users: query users sorted by created_at desc
+    const usersRes = await client.queryUsers(
+      { role: "user" },
+      { created_at: -1 },
+      { limit: 10 },
+    );
+
+    const newUsers = usersRes.users.map((u) => ({
+      id: u.id,
+      name: u.name || u.id,
+      createdAt: u.created_at as string,
+      online: u.online ?? false,
+    }));
+
+    return NextResponse.json({ powerUsers, newUsers, recentMessages: topRecentMessages });
+  } catch (error) {
+    console.error("Stream API error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch Stream data" },
+      { status: 500 },
+    );
+  }
+}
