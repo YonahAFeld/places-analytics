@@ -96,7 +96,7 @@ export async function GET() {
     const msg = error instanceof Error ? error.message : String(error);
     console.error("Stream API error:", msg);
     return NextResponse.json(
-      { error: "Failed to fetch Stream data", detail: msg },
+      { error: "Failed to fetch Stream data" },
       { status: 500 },
     );
   }

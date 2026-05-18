@@ -26,7 +26,8 @@ const CUSTOM_EVENTS = [
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const days = searchParams.get("days") || "28";
+  const rawDays = searchParams.get("days");
+  const days = ["7", "28", "90"].includes(rawDays ?? "") ? rawDays! : "28";
 
   try {
     const client = getClient();
